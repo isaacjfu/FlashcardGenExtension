@@ -1,0 +1,22 @@
+{
+  "name": "Hello Extensions",
+  "description": "Base Level Extension",
+  "version": "1.0",
+  "manifest_version": 3,
+  "commands":{
+    "lookUp":{
+      "suggested_key":{
+        "default": "Ctrl+Shift+L",
+        "mac": "MacCtrl+Shift+L"
+      },
+      "description": "Filler description"
+    }
+  },
+  "background":{
+    "service_worker":"background.js"
+  },
+  "action": {
+    "default_popup": "extensionInfo.html",
+    "default_icon": "icon.png"
+  }
+}
