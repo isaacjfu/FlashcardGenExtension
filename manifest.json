@@ -3,6 +3,10 @@
   "description": "Base Level Extension",
   "version": "1.0",
   "manifest_version": 3,
+  "permissions":[
+    "activeTab",
+    "scripting"
+  ],
   "commands":{
     "lookUp":{
       "suggested_key":{
@@ -18,5 +22,11 @@
   "action": {
     "default_popup": "extensionInfo.html",
     "default_icon": "icon.png"
-  }
+  },
+  "content_scripts":[
+    {
+      "matches": ["https://*/*"],
+      "js":["content.js"]
+    }
+  ]
 }
