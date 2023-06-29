@@ -7,15 +7,6 @@
     "activeTab",
     "scripting"
   ],
-  "commands":{
-    "lookUp":{
-      "suggested_key":{
-        "default": "Ctrl+Shift+L",
-        "mac": "MacCtrl+Shift+L"
-      },
-      "description": "Filler description"
-    }
-  },
   "background":{
     "service_worker":"background.js"
   },
