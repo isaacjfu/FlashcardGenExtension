@@ -1,12 +1,13 @@
 var modalStyle = `
-    width: 200px;
-    height: 100px;
+    width: 400px;
+    height: 300px;
     background-color: white;
     color: black;
     position: fixed;
     display: block;
     border: 2px solid black;
     z-index: 9999;
+    overflow-y:auto;
 `
 var modalTextStyle = `
 
@@ -21,6 +22,8 @@ var buttonStyle = `
 
 var wikiApiURL = "https://en.wiktionary.org/w/api.php?action=query&prop=extracts&format=json&titles=";
 
+// const translate = require('google-translate-api');
+import * as translate from 'google-translate-api';
 
 document.addEventListener("keydown",function(event){
   if(event.ctrlKey && event.shiftKey && event.key === "L"){
@@ -28,7 +31,7 @@ document.addEventListener("keydown",function(event){
     const text = selectedText.toString();
     var oRange = selectedText.getRangeAt(0);
     var oRect = oRange.getBoundingClientRect();
-    createModal(oRect.right,oRect.bottom,text);
+    createPopUp(oRect.right,oRect.bottom,text);
   }
   if(event.ctrlKey && event.shiftKey && event.key === "T"){
     const selectedText = window.getSelection();
@@ -51,6 +54,7 @@ async function getWiktionaryPageInfo(title) {
 
     const response = await fetch(url);
     const data = await response.json();
+    console.log(data);
     console.log("ABC");
     console.log(data.parse.text["*"]);
     const content = data.parse.text["*"];
@@ -63,56 +67,63 @@ async function getWiktionaryPageInfo(title) {
 }
 
 function parseWikiHTML(wikiHTML){
+
   return wikiHTML;
 }
-// // Example usage
-// const title = 'computer';
-// getWiktionaryPageInfo(title)
-//   .then(pageInfo => {
-//     if (pageInfo) {
-//       console.log(`Page Information for '${title}':`);
-//       console.log(pageInfo);
-//     } else {
-//       console.log(`Page '${title}' does not exist on Wiktionary.`);
-//     }
-//   })
-//   .catch(error => {
-//     console.error('Error:', error);
-//   });
 
-async function createModal(left,top,text){
+async function generateTranslation(text){
   const wikiHTML = await getWiktionaryPageInfo(text);
-  console.log(wikiHTML);
   const parsedWiki = parseWikiHTML(wikiHTML);
+  return parsedWiki;
+}
+async function googleTranslate(text){
+  translate(text,{to:'en'}).then(res =>{
+    return res;
+  }).catch(err=>{
+    console.log(error)
+  })
+}
 
-  var container = document.createElement("div");
-
+function createModalElement(left,top,definition){
   var modalTop = top.toString() + 'px';
   var modalLeft = left.toString() + 'px';
-  var modal = document.createElement("div")
-  var closeButton = document.createElement("button")
-  var modalText = document.createElement("div")
-  modalText.innerHTML = parsedWiki;
-  modalText.style.cssText = modalTextStyle;
+  var modal = document.createElement("div");
+  modal.style.cssText = modalStyle;
+  modal.style.top = modalTop;
+  modal.style.left=  left.toString()+ 'px';
+  var modalText = createModalTextElement(definition);
+  var closeButton = createCloseButtonElement(modal);
 
+  modal.appendChild(modalText);
+  modal.appendChild(closeButton);
+  return modal;
+}
+
+function createModalTextElement(definition){
+  var modalText = document.createElement("div");
+  modalText.innerHTML = definition;
+  modalText.style.cssText = modalTextStyle;
+  return modalText;
+}
+
+function createCloseButtonElement(modal){
+  var closeButton = document.createElement("button");
   function closeModal(){
-    modal.style.display ="none";
+    modal.style.display = "none";
   }
   closeButton.addEventListener("click",closeModal);
   closeButton.textContent = "X";
   closeButton.style.cssText = buttonStyle;
+  return closeButton;
+}
 
-  modal.style.cssText = modalStyle;
-  modal.style.top = modalTop;
-  modal.style.left = modalLeft;
-  // modal.textContent = "Highlighted Text is " + text;
-
-  modal.appendChild(modalText);
-  modal.appendChild(closeButton);
+async function createPopUp(left,top,text){
+  const definition = await generateTranslation(text);
+  console.log(definition);
+  var container = document.createElement("div");
+  var modal = createModalElement(left,top,definition)
   container.appendChild(modal);
   document.body.insertBefore(container,document.body.firstChild);
-
-  console.log("bye")
 }
 
 // chrome.runtime.onMessage.addListener(function(request,sender,sendResponse){
