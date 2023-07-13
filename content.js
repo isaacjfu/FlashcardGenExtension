@@ -22,8 +22,8 @@ var buttonStyle = `
 
 var wikiApiURL = "https://en.wiktionary.org/w/api.php?action=query&prop=extracts&format=json&titles=";
 
-// const translate = require('google-translate-api');
-import * as translate from 'google-translate-api';
+const translate = require('google-translate-api');
+// import * as translate from 'google-translate-api';
 
 document.addEventListener("keydown",function(event){
   if(event.ctrlKey && event.shiftKey && event.key === "L"){
