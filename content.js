@@ -20,11 +20,6 @@ var buttonStyle = `
     position:absolute;
 `
 
-var wikiApiURL = "https://en.wiktionary.org/w/api.php?action=query&prop=extracts&format=json&titles=";
-
-// const translate = require('google-translate-api');
-import * as translate from 'google-translate-api';
-
 document.addEventListener("keydown",function(event){
   if(event.ctrlKey && event.shiftKey && event.key === "L"){
     const selectedText = window.getSelection();
@@ -72,16 +67,31 @@ function parseWikiHTML(wikiHTML){
 }
 
 async function generateTranslation(text){
-  const wikiHTML = await getWiktionaryPageInfo(text);
-  const parsedWiki = parseWikiHTML(wikiHTML);
-  return parsedWiki;
+  // const wikiHTML = await getWiktionaryPageInfo(text);
+  // const parsedWiki = parseWikiHTML(wikiHTML);
+  const translation = googleTranslate(text);
+  return translation;
 }
 async function googleTranslate(text){
-  translate(text,{to:'en'}).then(res =>{
-    return res;
-  }).catch(err=>{
-    console.log(error)
-  })
+  try{
+    let token = await generate(text);
+    const apiUrl = 'https://translate.google.com/m';
+    const params = new URLSearchParams({
+      tl: 'en',
+      sl: 'auto',
+      q: text,
+      origin: '*',
+      [token.name]: token.value
+    });
+    const url = `${apiUrl}?${params}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    console.log(data);
+    return data;
+  } catch (error) {
+    console.error('Error retrieving page information:', error);
+    return null;
+  }
 }
 
 function createModalElement(left,top,definition){
@@ -125,6 +135,108 @@ async function createPopUp(left,top,text){
   container.appendChild(modal);
   document.body.insertBefore(container,document.body.firstChild);
 }
+
+/**
+ * Last update: 2/11/2018
+ * https://translate.google.com/translate/releases/twsfe_w_20160620_RC00/r/js/desktop_module_main.js
+ *
+ * Everything between 'BEGIN' and 'END' was copied from the script above.
+ */
+
+// const { request } = require("undici");
+
+/* eslint-disable */
+// BEGIN
+function zr(a) {
+    let b;
+    if (null !== yr) b = yr;
+    else {
+        b = wr(String.fromCharCode(84));
+        let c = wr(String.fromCharCode(75));
+        b = [ b(), b() ];
+        b[1] = c();
+        b = (yr = window[b.join(c())] || "") || "";
+    }
+    let d = wr(String.fromCharCode(116));
+    let c = wr(String.fromCharCode(107));
+    d = [ d(), d() ];
+    d[1] = c();
+    c = "&" + d.join("") + "=";
+    d = b.split(".");
+    b = Number(d[0]) || 0;
+    // eslint-disable-next-line no-var
+    for (var e = [], f = 0, g = 0; g < a.length; g++) {
+        let l = a.charCodeAt(g);
+        128 > l ? e[f++] = l : (2048 > l ? e[f++] = l >> 6 | 192 : ((l & 64512) == 55296 && g + 1 < a.length && (a.charCodeAt(g + 1) & 64512) == 56320 ? (l = 65536 + ((l & 1023) << 10) + (a.charCodeAt(++g) & 1023), e[f++] = l >> 18 | 240, e[f++] = l >> 12 & 63 | 128) : e[f++] = l >> 12 | 224, e[f++] = l >> 6 & 63 | 128), e[f++] = l & 63 | 128);
+    }
+    a = b;
+    for (let f = 0; f < e.length; f++) a += e[f], a = xr(a, "+-a^+6");
+    a = xr(a, "+-3^+b+-f");
+    a ^= Number(d[1]) || 0;
+    0 > a && (a = (a & 2147483647) + 2147483648);
+    a %= 1E6;
+    return c + (a.toString() + "." + (a ^ b));
+}
+
+let yr = null;
+let wr = function(a) {
+    return function() {
+        return a;
+    };
+};
+let xr = function(a, b) {
+    for (let c = 0; c < b.length - 2; c += 3) {
+        let d = b.charAt(c + 2);
+        d = d >= "a" ? d.charCodeAt(0) - 87 : Number(d);
+        d = b.charAt(c + 1) == "+" ? a >>> d : a << d;
+        a = b.charAt(c) == "+" ? a + d & 4294967295 : a ^ d;
+    }
+    return a;
+};
+// END
+/* eslint-enable */
+
+const config = new Map();
+
+const window = {
+    TKK: config.get("TKK") || "0"
+};
+
+// eslint-disable-next-line require-jsdoc
+async function updateTKK() {
+    let now = Math.floor(Date.now() / 3600000);
+
+    if (Number(window.TKK.split(".")[0]) !== now) {
+        const response = await fetch("https://translate.google.com");
+        const body = await response.body.text();
+
+        // code will extract something like tkk:'1232135.131231321312', we need only value
+        const code = body.match(/tkk:'\d+.\d+'/g);
+
+        if (code.length > 0) {
+            // extracting value tkk:'1232135.131231321312', this will extract only token: 1232135.131231321312
+            const xt = code[0].split(":")[1].replace(/'/g, "");
+
+            window.TKK = xt;
+            config.set("TKK", xt);
+        }
+    }
+}
+
+// eslint-disable-next-line require-jsdoc
+async function generate(text) {
+    try {
+        await updateTKK();
+
+        let tk = zr(text);
+        tk = tk.replace("&tk=", "");
+        return { name: "tk", value: tk };
+    }
+    catch (error) {
+        return error;
+    }
+}
+
 
 // chrome.runtime.onMessage.addListener(function(request,sender,sendResponse){
 //   console.log("chrome listener is online");
